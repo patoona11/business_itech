@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบัญชี สนามกอล์ฟ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .card { border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: none; }
+        .income { color: #198754; font-weight: bold; }
+        .expense { color: #dc3545; font-weight: bold; }
+        .net-positive { color: #0d6efd; }
+        .net-negative { color: #dc3545; }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <h2 class="text-center mb-4">⛳ ระบบบัญชีรายรับ-รายจ่าย สนามกอล์ฟ</h2>
+    
+    <!-- Dashboard Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-center p-4">
+                <h5 class="text-muted">รายรับรวม</h5>
+                <h3 class="income">฿{{ "{:,.2f}".format(total_income) }}</h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center p-4">
+                <h5 class="text-muted">รายจ่ายรวม</h5>
+                <h3 class="expense">฿{{ "{:,.2f}".format(total_expense) }}</h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center p-4">
+                <h5 class="text-muted">คงเหลือสุทธิ</h5>
+                <h3 class="{% if net_balance >= 0 %}net-positive{% else %}net-negative{% endif %} fw-bold">
+                    ฿{{ "{:,.2f}".format(net_balance) }}
+                </h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Add Transaction Form -->
+        <div class="col-md-4 mb-4">
+            <div class="card p-4">
+                <h4 class="mb-3">➕ เพิ่มรายการใหม่</h4>
+                <form action="/add" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">วันที่</label>
+                        <input type="date" name="date" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">รายละเอียด</label>
+                        <input type="text" name="description" class="form-control" placeholder="เช่น ค่ากรีนฟี, ค่าปุ๋ย, ค่าไฟ" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">ประเภท</label>
+                        <select name="type" class="form-select">
+                            <option value="รายรับ">รายรับ</option>
+                            <option value="รายจ่าย">รายจ่าย</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">จำนวนเงิน (บาท)</label>
+                        <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2">บันทึกข้อมูล</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Transaction Table -->
+        <div class="col-md-8">
+            <div class="card p-4">
+                <h4 class="mb-3">📋 ประวัติรายการ</h4>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mt-2">
+                        <thead class="table-light">
+                            <tr>
+                                <th>วันที่</th>
+                                <th>รายละเอียด</th>
+                                <th>ประเภท</th>
+                                <th class="text-end">จำนวนเงิน</th>
+                                <th class="text-center">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in transactions %}
+                            <tr>
+                                <td>{{ tx.date }}</td>
+                                <td>{{ tx.description }}</td>
+                                <td>
+                                    <span class="badge {% if tx.type == 'รายรับ' %}bg-success{% else %}bg-danger{% endif %} rounded-pill">
+                                        {{ tx.type }}
+                                    </span>
+                                </td>
+                                <td class="text-end fw-bold {% if tx.type == 'รายรับ' %}text-success{% else %}text-danger{% endif %}">
+                                    {{ "{:,.2f}".format(tx.amount) }}
+                                </td>
+                                <td class="text-center">
+                                    <a href="/delete/{{ tx.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('ต้องการลบรายการนี้ใช่หรือไม่?')">ลบ</a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">ยังไม่มีรายการบันทึก เริ่มบันทึกข้อมูลได้เลย!</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

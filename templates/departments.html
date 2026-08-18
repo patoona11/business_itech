@@ -1,0 +1,44 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h2>🏢 จัดการหน่วยงาน</h2>
+<hr>
+<div class="row">
+    <div class="col-md-4">
+        <div class="card p-3 mb-4">
+            <h4>เพิ่มหน่วยงานใหม่</h4>
+            <form action="/departments" method="POST">
+                <div class="mb-3">
+                    <label>รหัสหน่วยงาน</label>
+                    <input type="text" name="code" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>ชื่อหน่วยงาน</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">บันทึก</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card p-3">
+            <h4>รายชื่อหน่วยงาน</h4>
+            <table class="table table-hover mt-3">
+                <thead class="table-light">
+                    <tr>
+                        <th>รหัสหน่วยงาน</th>
+                        <th>ชื่อหน่วยงาน</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dep in departments %}
+                    <tr>
+                        <td>{{ dep.code }}</td>
+                        <td>{{ dep.name }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

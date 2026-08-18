@@ -1,0 +1,92 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h2>📓 สมุดบัญชีแยกประเภท (General Ledger)</h2>
+<hr>
+<div class="card p-4 mb-4">
+    <form action="/gl" method="GET" class="d-flex">
+        <div class="w-50 me-3">
+            <select name="account_code" class="form-select select2" required>
+                <option value=""></option>
+                {% for a in accounts %}
+            <option value="{{ a.code }}" {% if a.code == selected_account %}selected{% endif %}>{{ a.code }} - {{ a.name }}</option>
+            {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">ดูรายงาน</button>
+    </form>
+</div>
+
+{% if selected_account %}
+<div class="card p-3">
+    <h4>บัญชี: 
+        {% for a in accounts %}
+            {% if a.code == selected_account %}{{ a.code }} {{ a.name }} (หมวด {{ a.category }}){% endif %}
+        {% endfor %}
+    </h4>
+    <table class="table table-bordered mt-3">
+        <thead class="table-light">
+            <tr>
+                <th width="15%">วันที่</th>
+                <th width="15%">เลขที่เอกสาร</th>
+                <th width="30%">คำอธิบายรายการ</th>
+                <th width="15%">หน่วยงาน</th>
+                <th width="12.5%" class="text-end">เดบิต</th>
+                <th width="12.5%" class="text-end">เครดิต</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set total_dr = namespace(value=0) %}
+            {% set total_cr = namespace(value=0) %}
+            
+            {% for t in transactions %}
+                {% set total_dr.value = total_dr.value + t.debit %}
+                {% set total_cr.value = total_cr.value + t.credit %}
+            <tr>
+                <td>{{ t.date }}</td>
+                <td>{{ t.doc_no }}</td>
+                <td>{{ t.description }}</td>
+                <td>{{ t.dept_name or '-' }}</td>
+                <td class="text-end">{{ "{:,.2f}".format(t.debit) if t.debit else '-' }}</td>
+                <td class="text-end">{{ "{:,.2f}".format(t.credit) if t.credit else '-' }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center text-muted">ไม่พบรายการเคลื่อนไหว</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="table-secondary fw-bold">
+                <td colspan="4" class="text-end">รวมยอดเคลื่อนไหว:</td>
+                <td class="text-end text-success">{{ "{:,.2f}".format(total_dr.value) }}</td>
+                <td class="text-end text-success">{{ "{:,.2f}".format(total_cr.value) }}</td>
+            </tr>
+            <tr class="table-primary fw-bold">
+                <td colspan="4" class="text-end">ยอดยกไป (คงเหลือ):</td>
+                <td colspan="2" class="text-center text-primary fs-5">
+                    {% if total_dr.value > total_cr.value %}
+                        Dr. {{ "{:,.2f}".format(total_dr.value - total_cr.value) }}
+                    {% elif total_cr.value > total_dr.value %}
+                        Cr. {{ "{:,.2f}".format(total_cr.value - total_dr.value) }}
+                    {% else %}
+                        0.00
+                    {% endif %}
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            placeholder: "-- เลือกบัญชี --",
+            allowClear: true,
+            width: '100%'
+        });
+    });
+</script>
+{% endblock %}

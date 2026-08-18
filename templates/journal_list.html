@@ -1,0 +1,29 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h2>📑 ประวัติเอกสาร (สมุดรายวันทั่วไป)</h2>
+<hr>
+<div class="card p-3">
+    <table class="table table-striped mt-3">
+        <thead class="table-dark">
+            <tr>
+                <th>เลขที่เอกสาร</th>
+                <th>วันที่</th>
+                <th>คำอธิบายรายการ</th>
+                <th class="text-end">ยอดรวมเดบิต</th>
+                <th class="text-end">ยอดรวมเครดิต</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doc in docs %}
+            <tr>
+                <td>{{ doc.doc_no }}</td>
+                <td>{{ doc.date }}</td>
+                <td>{{ doc.description }}</td>
+                <td class="text-end text-success">{{ "{:,.2f}".format(doc.total_debit or 0) }}</td>
+                <td class="text-end text-success">{{ "{:,.2f}".format(doc.total_credit or 0) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

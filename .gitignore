@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# SQLite databases (ยกเว้นถ้าคุณอยากอัปโหลดฐานข้อมูลขึ้นไปด้วย ให้ลบบรรทัดนี้ออก)
+*.sqlite3
+*.db
+
+# Flask
+instance/
+.webassets-cache
+
+# OS generated files
+.DS_Store
+Thumbs.db

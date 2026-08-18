@@ -1,0 +1,62 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h2>⚖️ งบทดลอง (Trial Balance)</h2>
+<hr>
+<div class="card p-3">
+    <table class="table table-hover mt-3">
+        <thead class="table-dark">
+            <tr>
+                <th>รหัสบัญชี</th>
+                <th>ชื่อบัญชี</th>
+                <th>หมวดหมู่</th>
+                <th class="text-end">เดบิต (Dr)</th>
+                <th class="text-end">เครดิต (Cr)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set total_dr = namespace(value=0) %}
+            {% set total_cr = namespace(value=0) %}
+            
+            {% for row in tb_data %}
+                {% set dr = row.sum_dr or 0 %}
+                {% set cr = row.sum_cr or 0 %}
+                
+                {% set bal_dr = 0 %}
+                {% set bal_cr = 0 %}
+                
+                {% if row.category in ['สินทรัพย์', 'ค่าใช้จ่าย'] %}
+                    {% set bal = dr - cr %}
+                    {% if bal > 0 %}{% set bal_dr = bal %}{% elif bal < 0 %}{% set bal_cr = bal * -1 %}{% endif %}
+                {% else %}
+                    {% set bal = cr - dr %}
+                    {% if bal > 0 %}{% set bal_cr = bal %}{% elif bal < 0 %}{% set bal_dr = bal * -1 %}{% endif %}
+                {% endif %}
+                
+                {% set total_dr.value = total_dr.value + bal_dr %}
+                {% set total_cr.value = total_cr.value + bal_cr %}
+                
+                {% if bal_dr > 0 or bal_cr > 0 %}
+                <tr>
+                    <td>{{ row.code }}</td>
+                    <td>{{ row.name }}</td>
+                    <td>{{ row.category }}</td>
+                    <td class="text-end">{{ "{:,.2f}".format(bal_dr) if bal_dr else '-' }}</td>
+                    <td class="text-end">{{ "{:,.2f}".format(bal_cr) if bal_cr else '-' }}</td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="table-secondary fw-bold fs-5">
+                <td colspan="3" class="text-end">รวมทั้งสิ้น:</td>
+                <td class="text-end {% if total_dr.value == total_cr.value %}text-success{% else %}text-danger{% endif %}">
+                    {{ "{:,.2f}".format(total_dr.value) }}
+                </td>
+                <td class="text-end {% if total_dr.value == total_cr.value %}text-success{% else %}text-danger{% endif %}">
+                    {{ "{:,.2f}".format(total_cr.value) }}
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+{% endblock %}

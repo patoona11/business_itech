@@ -1,0 +1,133 @@
+{
+  "คำอธิบาย": {
+    "rows": 148,
+    "cols": 9,
+    "headers": [
+      "Unnamed: 0",
+      "Unnamed: 1",
+      "Unnamed: 2",
+      "Unnamed: 3",
+      "Unnamed: 4",
+      "Unnamed: 5",
+      "Unnamed: 6",
+      "Unnamed: 7",
+      "Unnamed: 8"
+    ]
+  },
+  "ผังบัญชี": {
+    "rows": 91,
+    "cols": 7,
+    "headers": [
+      "เลขที่บัญชี",
+      "ชื่อบัญชี",
+      "หมวด",
+      "ชื่อหมวด",
+      "DR.",
+      "CR.",
+      "คงเหลือ"
+    ]
+  },
+  "หน่วยงาน": {
+    "rows": 1,
+    "cols": 5,
+    "headers": [
+      "รหัสหน่วยงาน",
+      "ชื่อหน่วยงาน",
+      "รายได้",
+      "ค่าใช้จ่าย",
+      "กำไร(ขาดทุน)"
+    ]
+  },
+  "บันทึกบัญชี": {
+    "rows": 40,
+    "cols": 12,
+    "headers": [
+      "Unnamed: 0",
+      "สนามกอล์ฟภูกระแต คณะเทคโนโลยีอุตสาหกรรม มหาวิทยาลัยนครพนม\n214 หมู่ 12 ต.หนองญาติ ถ.นิตโย อ.เมือง จ.นครพนม\nโทร.042-503777 www.itech.npu.ac.th",
+      "ใบสำคัญบันทึกบัญชี",
+      "Unnamed: 3",
+      "Unnamed: 4",
+      "Unnamed: 5",
+      "Unnamed: 6",
+      "status",
+      "0",
+      "Unnamed: 9",
+      "Unnamed: 10",
+      "เมนู"
+    ]
+  },
+  "JE": {
+    "rows": 457,
+    "cols": 6,
+    "headers": [
+      "Unnamed: 0",
+      "Unnamed: 1",
+      "Unnamed: 2",
+      "Unnamed: 3",
+      "Unnamed: 4",
+      "Unnamed: 5"
+    ]
+  },
+  "GL": {
+    "rows": 268,
+    "cols": 6,
+    "headers": [
+      "Unnamed: 0",
+      "Unnamed: 1",
+      "Unnamed: 2",
+      "Unnamed: 3",
+      "Unnamed: 4",
+      "Unnamed: 5"
+    ]
+  },
+  "TB": {
+    "rows": 40,
+    "cols": 5,
+    "headers": [
+      "ประเภท",
+      "1",
+      "Unnamed: 2",
+      "Unnamed: 3",
+      "Unnamed: 4"
+    ]
+  },
+  "NI": {
+    "rows": 42,
+    "cols": 4,
+    "headers": [
+      "Unnamed: 0",
+      "Unnamed: 1",
+      "Unnamed: 2",
+      "Unnamed: 3"
+    ]
+  },
+  "TBC": {
+    "rows": 40,
+    "cols": 5,
+    "headers": [
+      "Unnamed: 0",
+      "Unnamed: 1",
+      "Unnamed: 2",
+      "Unnamed: 3",
+      "Unnamed: 4"
+    ]
+  },
+  "db": {
+    "rows": 496,
+    "cols": 12,
+    "headers": [
+      "รหัส",
+      "วันที่",
+      "เลขเอกสาร",
+      "คำอธิบาย",
+      "เลขที่บัญชี",
+      "ชื่อบัญชี",
+      "เดบิต",
+      "เครดิต",
+      "หมวด",
+      "รหัสหน่วยงาน",
+      "ชื่อหน่วยงาน",
+      "ประเภท"
+    ]
+  }
+}

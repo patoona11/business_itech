@@ -1,0 +1,58 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h2>📖 จัดการผังบัญชี</h2>
+<hr>
+<div class="row">
+    <div class="col-md-4">
+        <div class="card p-3 mb-4">
+            <h4>เพิ่มบัญชีใหม่</h4>
+            <form action="/accounts" method="POST">
+                <div class="mb-3">
+                    <label>รหัสบัญชี</label>
+                    <input type="text" name="code" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>ชื่อบัญชี</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>หมวดหมู่</label>
+                    <select name="category" class="form-select">
+                        <option value="สินทรัพย์">สินทรัพย์ (1)</option>
+                        <option value="หนี้สิน">หนี้สิน (2)</option>
+                        <option value="ส่วนของเจ้าของ">ส่วนของเจ้าของ (3)</option>
+                        <option value="รายได้">รายได้ (4)</option>
+                        <option value="ค่าใช้จ่าย">ค่าใช้จ่าย (5)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">บันทึก</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card p-3">
+            <h4>รายชื่อผังบัญชี</h4>
+            <table class="table table-hover mt-3">
+                <thead class="table-light">
+                    <tr>
+                        <th>รหัสบัญชี</th>
+                        <th>ชื่อบัญชี</th>
+                        <th>หมวดหมู่</th>
+                        <th>จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for acc in accounts %}
+                    <tr>
+                        <td>{{ acc.code }}</td>
+                        <td>{{ acc.name }}</td>
+                        <td>{{ acc.category }}</td>
+                        <td><a href="/delete_account/{{ acc.code }}" class="btn btn-sm btn-danger" onclick="return confirm('ลบ?');">ลบ</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
