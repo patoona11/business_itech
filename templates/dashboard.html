@@ -2,11 +2,26 @@
 {% block content %}
 <h2>ภาพรวมระบบ (Dashboard)</h2>
 <hr>
-<div class="row">
+<div class="row mt-4">
     <div class="col-md-12">
-        <div class="card p-4 text-center">
-            <h4>ยินดีต้อนรับสู่ระบบบัญชี Double-Entry</h4>
-            <p class="text-muted">โปรดเลือกเมนูด้านซ้ายเพื่อเริ่มต้นใช้งานระบบ<br>คุณสามารถจัดการผังบัญชี บันทึกสมุดรายวัน และดูงบทดลองได้</p>
+        <div class="card p-5 text-center" style="background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);">
+            <h2 class="mb-4" style="color: #0d7350; font-weight: 600;">👋 ยินดีต้อนรับสู่ระบบ ITECH@BalanceX</h2>
+            <p class="text-muted fs-5 mb-4">ระบบจัดการบัญชีคู่ (Double-Entry) ที่ใช้งานง่ายและเป็นมิตร</p>
+            
+            <div class="d-flex justify-content-center gap-4 mt-2">
+                <a href="/journal" class="btn btn-success btn-lg px-4 py-3 shadow-sm" style="border-radius: 12px; background-color: #159f6d; border: none;">
+                    <span class="fs-4 d-block mb-1">✍️</span>
+                    บันทึกรายการบัญชีใหม่
+                </a>
+                <a href="/tb" class="btn btn-outline-primary btn-lg px-4 py-3 shadow-sm" style="border-radius: 12px;">
+                    <span class="fs-4 d-block mb-1">⚖️</span>
+                    ตรวจสอบงบทดลอง
+                </a>
+                <a href="/accounts" class="btn btn-outline-secondary btn-lg px-4 py-3 shadow-sm" style="border-radius: 12px;">
+                    <span class="fs-4 d-block mb-1">📖</span>
+                    จัดการผังบัญชี
+                </a>
+            </div>
         </div>
     </div>
 </div>
