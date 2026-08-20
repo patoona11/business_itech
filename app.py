@@ -60,6 +60,29 @@ def init_db():
     conn.commit()
     conn.close()
 
+from flask import session
+
+@app.before_request
+def require_login():
+    allowed_routes = ['login', 'static']
+    if request.endpoint not in allowed_routes and not session.get('logged_in'):
+        return redirect(url_for('login'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        if request.form.get('password') == 'itech@BalanceX':
+            session['logged_in'] = True
+            return redirect(url_for('dashboard'))
+        else:
+            flash('รหัสผ่านไม่ถูกต้อง', 'danger')
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
 @app.route('/')
 def dashboard():
     return render_template('dashboard.html')
@@ -131,6 +154,8 @@ def journal_entry():
             cur.execute("INSERT INTO documents (doc_no, date, description) VALUES (?, ?, ?)", (doc_no, date, description))
             doc_id = cur.lastrowid
             
+            transactions_to_sync = []
+            
             for i in range(len(account_codes)):
                 ac = account_codes[i]
                 dc = dept_codes[i] if dept_codes[i] else None
@@ -140,9 +165,29 @@ def journal_entry():
                 if ac and (dr > 0 or cr > 0):
                     cur.execute("INSERT INTO transactions (doc_id, account_code, dept_code, debit, credit) VALUES (?, ?, ?, ?, ?)",
                                 (doc_id, ac, dc, dr, cr))
+                    transactions_to_sync.append({
+                        "date": date,
+                        "doc_no": doc_no,
+                        "description": description,
+                        "account_code": ac,
+                        "debit": dr,
+                        "credit": cr
+                    })
             
             conn.commit()
-            flash('บันทึกสมุดรายวันสำเร็จ', 'success')
+            
+            import requests
+            import threading
+            def sync_to_google(txs):
+                url = "https://script.google.com/macros/s/AKfycbxQy-jH6s9rFrkSmTONyVQ31WmobiEGXJxnI3RDDJA3_hOYeqgU0mReYqxacUhn8546oQ/exec"
+                for tx in txs:
+                    try:
+                        requests.post(url, json=tx)
+                    except:
+                        pass
+            threading.Thread(target=sync_to_google, args=(transactions_to_sync,)).start()
+            
+            flash('บันทึกสมุดรายวันสำเร็จ (พร้อมส่งข้อมูลสำรองขึ้น Google Sheets)', 'success')
             return redirect(url_for('journal_list'))
         except sqlite3.IntegrityError:
             conn.rollback()
@@ -216,6 +261,45 @@ def trial_balance():
     ''').fetchall()
     conn.close()
     return render_template('reports.html', tb_data=tb_data)
+
+# ===================== EXPORT TO EXCEL =====================
+import pandas as pd
+from io import BytesIO
+from flask import send_file
+
+@app.route('/export/gl')
+def export_gl():
+    conn = get_db()
+    account_code = request.args.get('account_code', '')
+    if not account_code:
+        return "Please select an account first.", 400
+        
+    transactions = conn.execute('''
+        SELECT d.date as "วันที่", d.doc_no as "เลขที่เอกสาร", d.description as "คำอธิบายรายการ", 
+               dept.name as "หน่วยงาน", t.debit as "เดบิต", t.credit as "เครดิต"
+        FROM transactions t
+        JOIN documents d ON t.doc_id = d.id
+        LEFT JOIN departments dept ON t.dept_code = dept.code
+        WHERE t.account_code = ?
+        ORDER BY d.date, d.id
+    ''', (account_code,)).fetchall()
+    
+    account_info = conn.execute("SELECT name FROM accounts WHERE code = ?", (account_code,)).fetchone()
+    conn.close()
+    
+    if not transactions:
+        return "ไม่มีข้อมูลสำหรับบัญชีนี้", 404
+        
+    df = pd.DataFrame([dict(row) for row in transactions])
+    
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name=f"{account_code}")
+    output.seek(0)
+    
+    acc_name = account_info['name'] if account_info else account_code
+    filename = f"GL_{account_code}_{acc_name}.xlsx"
+    return send_file(output, download_name=filename, as_attachment=True)
 
 if __name__ == '__main__':
     init_db()

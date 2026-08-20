@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบ - ระบบบัญชี</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .login-card { width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: none; border-radius: 10px; padding: 30px; background: #fff; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h3 class="text-center mb-4">⛳ เข้าสู่ระบบบัญชี</h3>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form action="/login" method="POST">
+            <div class="mb-3">
+                <label>รหัสผ่านเข้าใช้งาน (Password)</label>
+                <input type="password" name="password" class="form-control" placeholder="กรอกรหัสผ่าน" required autofocus>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">เข้าสู่ระบบ</button>
+        </form>
+    </div>
+</body>
+</html>

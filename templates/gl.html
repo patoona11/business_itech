@@ -1,8 +1,8 @@
 {% extends 'layout.html' %}
 {% block content %}
 <h2>📓 สมุดบัญชีแยกประเภท (General Ledger)</h2>
-<hr>
-<div class="card p-4 mb-4">
+<hr class="no-print">
+<div class="card p-4 mb-4 no-print">
     <form action="/gl" method="GET" class="d-flex">
         <div class="w-50 me-3">
             <select name="account_code" class="form-select select2" required>
@@ -18,11 +18,17 @@
 
 {% if selected_account %}
 <div class="card p-3">
-    <h4>บัญชี: 
-        {% for a in accounts %}
-            {% if a.code == selected_account %}{{ a.code }} {{ a.name }} (หมวด {{ a.category }}){% endif %}
-        {% endfor %}
-    </h4>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">บัญชี: 
+            {% for a in accounts %}
+                {% if a.code == selected_account %}{{ a.code }} {{ a.name }} (หมวด {{ a.category }}){% endif %}
+            {% endfor %}
+        </h4>
+        <div class="no-print">
+            <a href="/export/gl?account_code={{ selected_account }}" class="btn btn-success me-2">📥 ดาวน์โหลด Excel</a>
+            <button onclick="window.print()" class="btn btn-secondary">🖨️ พิมพ์เอกสาร</button>
+        </div>
+    </div>
     <table class="table table-bordered mt-3">
         <thead class="table-light">
             <tr>
