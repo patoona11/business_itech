@@ -71,7 +71,8 @@ def require_login():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        if request.form.get('password') == 'itech@BalanceX':
+        allowed_passwords = ['itech@BalanceX', 'itech@Balance', '1212312121']
+        if request.form.get('password') in allowed_passwords:
             session['logged_in'] = True
             return redirect(url_for('dashboard'))
         else:
