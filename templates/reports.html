@@ -3,7 +3,7 @@
 <h2>⚖️ งบทดลอง (Trial Balance)</h2>
 <hr>
 <div class="card p-3">
-    <table class="table table-hover mt-3">
+    <table class="table table-hover mt-3 align-middle">
         <thead class="table-dark">
             <tr>
                 <th>รหัสบัญชี</th>
@@ -11,6 +11,8 @@
                 <th>หมวดหมู่</th>
                 <th class="text-end">เดบิต (Dr)</th>
                 <th class="text-end">เครดิต (Cr)</th>
+                <th class="text-end">จำนวนเงินคงเหลือ</th>
+                <th class="text-center">สถานะ</th>
             </tr>
         </thead>
         <tbody>
@@ -35,15 +37,23 @@
                 {% set total_dr.value = total_dr.value + bal_dr %}
                 {% set total_cr.value = total_cr.value + bal_cr %}
                 
-                {% if bal_dr > 0 or bal_cr > 0 %}
                 <tr>
                     <td>{{ row.code }}</td>
                     <td>{{ row.name }}</td>
                     <td>{{ row.category }}</td>
                     <td class="text-end">{{ "{:,.2f}".format(bal_dr) if bal_dr else '-' }}</td>
                     <td class="text-end">{{ "{:,.2f}".format(bal_cr) if bal_cr else '-' }}</td>
+                    <td class="text-end fw-bold text-primary">{{ "{:,.2f}".format(bal_dr + bal_cr) }}</td>
+                    <td class="text-center">
+                        <form action="/accounts/toggle_status/{{ row.code }}" method="POST" class="m-0">
+                            {% if row.status == 2 %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100">ปิดอยู่ (คลิกเพื่อเปิด)</button>
+                            {% else %}
+                                <button type="submit" class="btn btn-sm btn-success w-100">เปิดอยู่ (คลิกเพื่อปิด)</button>
+                            {% endif %}
+                        </form>
+                    </td>
                 </tr>
-                {% endif %}
             {% endfor %}
         </tbody>
         <tfoot>
@@ -55,6 +65,7 @@
                 <td class="text-end {% if total_dr.value == total_cr.value %}text-success{% else %}text-danger{% endif %}">
                     {{ "{:,.2f}".format(total_cr.value) }}
                 </td>
+                <td colspan="2"></td>
             </tr>
         </tfoot>
     </table>

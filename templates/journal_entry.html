@@ -5,17 +5,28 @@
 <div class="card p-4">
     <form action="/journal" method="POST" id="jvForm">
         <div class="row mb-3">
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label>เลขที่เอกสาร</label>
                 <input type="text" name="doc_no" class="form-control" value="{{ next_doc_no }}" required>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label>วันที่</label>
                 <input type="date" name="date" class="form-control" required>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-3">
+                <label>อ้างอิงเอกสาร (Ref.)</label>
+                <input type="text" name="reference" class="form-control" placeholder="เช่น INV-001">
+            </div>
+            <div class="col-md-3">
                 <label>คำอธิบายรายการ</label>
                 <input type="text" name="description" class="form-control" required>
+            </div>
+            <div class="col-md-2">
+                <label>สถานะ</label>
+                <select name="status" class="form-select">
+                    <option value="1">ปกติ (Open)</option>
+                    <option value="2">ปิดบัญชี (Closed)</option>
+                </select>
             </div>
         </div>
         
@@ -65,9 +76,10 @@
             </tfoot>
         </table>
         
-        <button type="button" class="btn btn-secondary" onclick="addRow()">+ เพิ่มบรรทัด</button>
-        <hr>
-        <button type="submit" class="btn btn-primary px-5" onclick="return validateJV()">บันทึกรายการ</button>
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <button type="button" class="btn btn-secondary" onclick="addRow()">+ เพิ่มบรรทัด</button>
+            <button type="submit" class="btn btn-success btn-lg px-5 shadow-sm" onclick="return validateJV()">💾 บันทึกรายการ</button>
+        </div>
     </form>
 </div>
 

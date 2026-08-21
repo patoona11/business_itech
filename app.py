@@ -136,6 +136,25 @@ def manage_departments():
     conn.close()
     return render_template('departments.html', departments=departments)
 
+@app.route('/departments/edit/<code>', methods=['POST'])
+def edit_department(code):
+    conn = get_db()
+    new_name = request.form['name']
+    conn.execute("UPDATE departments SET name = ? WHERE code = ?", (new_name, code))
+    conn.commit()
+    conn.close()
+    flash('แก้ไขหน่วยงานสำเร็จ', 'success')
+    return redirect(url_for('manage_departments'))
+
+@app.route('/departments/delete/<code>')
+def delete_department(code):
+    conn = get_db()
+    conn.execute("DELETE FROM departments WHERE code = ?", (code,))
+    conn.commit()
+    conn.close()
+    flash('ลบหน่วยงานสำเร็จ', 'success')
+    return redirect(url_for('manage_departments'))
+
 # ===================== JOURNAL ENTRY (บันทึกบัญชี) =====================
 @app.route('/journal', methods=['GET', 'POST'])
 def journal_entry():
@@ -144,6 +163,8 @@ def journal_entry():
         doc_no = request.form['doc_no']
         date = request.form['date']
         description = request.form['description']
+        reference = request.form.get('reference', '')
+        status = request.form.get('status', '1')
         
         account_codes = request.form.getlist('account_code[]')
         dept_codes = request.form.getlist('dept_code[]')
@@ -152,7 +173,7 @@ def journal_entry():
         
         try:
             cur = conn.cursor()
-            cur.execute("INSERT INTO documents (doc_no, date, description) VALUES (?, ?, ?)", (doc_no, date, description))
+            cur.execute("INSERT INTO documents (doc_no, date, description, reference, status) VALUES (?, ?, ?, ?, ?)", (doc_no, date, description, reference, status))
             doc_id = cur.lastrowid
             
             transactions_to_sync = []
@@ -170,6 +191,8 @@ def journal_entry():
                         "date": date,
                         "doc_no": doc_no,
                         "description": description,
+                        "reference": reference,
+                        "status": status,
                         "account_code": ac,
                         "debit": dr,
                         "credit": cr
@@ -197,16 +220,16 @@ def journal_entry():
             conn.rollback()
             flash(f'Error: {str(e)}', 'danger')
             
-    accounts = conn.execute("SELECT * FROM accounts ORDER BY code").fetchall()
+    accounts = conn.execute("SELECT * FROM accounts WHERE status = 1 ORDER BY code").fetchall()
     departments = conn.execute("SELECT * FROM departments ORDER BY code").fetchall()
     
     # Auto-generate next doc_no
     last_doc = conn.execute("SELECT doc_no FROM documents ORDER BY id DESC LIMIT 1").fetchone()
-    next_doc_no = "JV-0001"
+    next_doc_no = "biz-00001"
     if last_doc:
         try:
             num = int(last_doc['doc_no'].split('-')[1]) + 1
-            next_doc_no = f"JV-{num:04d}"
+            next_doc_no = f"biz-{num:05d}"
         except:
             pass
             
@@ -235,14 +258,25 @@ def general_ledger():
     
     transactions = []
     if account_code:
-        transactions = conn.execute('''
-            SELECT d.date, d.doc_no, d.description, t.debit, t.credit, dept.name as dept_name
-            FROM transactions t
-            JOIN documents d ON t.doc_id = d.id
-            LEFT JOIN departments dept ON t.dept_code = dept.code
-            WHERE t.account_code = ?
-            ORDER BY d.date, d.id
-        ''', (account_code,)).fetchall()
+        if account_code == 'ALL':
+            transactions = conn.execute('''
+                SELECT d.date, d.doc_no, d.description, t.account_code, a.name as account_name, t.debit, t.credit, dept.name as dept_name
+                FROM transactions t
+                JOIN documents d ON t.doc_id = d.id
+                LEFT JOIN departments dept ON t.dept_code = dept.code
+                LEFT JOIN accounts a ON t.account_code = a.code
+                ORDER BY t.account_code, d.date, d.id
+            ''').fetchall()
+        else:
+            transactions = conn.execute('''
+                SELECT d.date, d.doc_no, d.description, t.account_code, a.name as account_name, t.debit, t.credit, dept.name as dept_name
+                FROM transactions t
+                JOIN documents d ON t.doc_id = d.id
+                LEFT JOIN departments dept ON t.dept_code = dept.code
+                LEFT JOIN accounts a ON t.account_code = a.code
+                WHERE t.account_code = ?
+                ORDER BY d.date, d.id
+            ''', (account_code,)).fetchall()
         
     accounts = conn.execute("SELECT * FROM accounts ORDER BY code").fetchall()
     conn.close()
@@ -253,7 +287,7 @@ def general_ledger():
 def trial_balance():
     conn = get_db()
     tb_data = conn.execute('''
-        SELECT a.code, a.name, a.category, 
+        SELECT a.code, a.name, a.category, a.status,
                SUM(t.debit) as sum_dr, SUM(t.credit) as sum_cr
         FROM accounts a
         LEFT JOIN transactions t ON a.code = t.account_code
@@ -262,6 +296,18 @@ def trial_balance():
     ''').fetchall()
     conn.close()
     return render_template('reports.html', tb_data=tb_data)
+
+@app.route('/accounts/toggle_status/<code>', methods=['POST'])
+def toggle_account_status(code):
+    conn = get_db()
+    account = conn.execute("SELECT status FROM accounts WHERE code = ?", (code,)).fetchone()
+    if account:
+        new_status = 2 if account['status'] == 1 else 1
+        conn.execute("UPDATE accounts SET status = ? WHERE code = ?", (new_status, code))
+        conn.commit()
+        flash('เปลี่ยนสถานะบัญชีสำเร็จ', 'success')
+    conn.close()
+    return redirect(url_for('trial_balance'))
 
 # ===================== EXPORT TO EXCEL =====================
 import pandas as pd

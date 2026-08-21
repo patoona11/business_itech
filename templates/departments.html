@@ -27,6 +27,7 @@
                     <tr>
                         <th>รหัสหน่วยงาน</th>
                         <th>ชื่อหน่วยงาน</th>
+                        <th width="150">จัดการ</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -34,7 +35,37 @@
                     <tr>
                         <td>{{ dep.code }}</td>
                         <td>{{ dep.name }}</td>
+                        <td>
+                            <!-- Edit Button -->
+                            <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ dep.code }}">แก้ไข</button>
+                            <!-- Delete Button -->
+                            <a href="/departments/delete/{{ dep.code }}" class="btn btn-sm btn-danger" onclick="return confirm('ยืนยันการลบหน่วยงานนี้?');">ลบ</a>
+                        </td>
                     </tr>
+                    
+                    <!-- Edit Modal -->
+                    <div class="modal fade" id="editModal{{ dep.code }}" tabindex="-1" aria-hidden="true">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <form action="/departments/edit/{{ dep.code }}" method="POST">
+                              <div class="modal-header">
+                                <h5 class="modal-title">แก้ไขหน่วยงาน {{ dep.code }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <div class="modal-body">
+                                <div class="mb-3">
+                                    <label>ชื่อหน่วยงานใหม่</label>
+                                    <input type="text" name="name" class="form-control" value="{{ dep.name }}" required>
+                                </div>
+                              </div>
+                              <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                                <button type="submit" class="btn btn-primary">บันทึกการแก้ไข</button>
+                              </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
                     {% endfor %}
                 </tbody>
             </table>

@@ -3,27 +3,26 @@
 <h2>📓 สมุดบัญชีแยกประเภท (General Ledger)</h2>
 <hr class="no-print">
 <div class="card p-4 mb-4 no-print">
-    <form action="/gl" method="GET" class="d-flex">
-        <div class="w-50 me-3">
-            <select name="account_code" class="form-select select2" required>
-                <option value=""></option>
-                {% for a in accounts %}
-            <option value="{{ a.code }}" {% if a.code == selected_account %}selected{% endif %}>{{ a.code }} - {{ a.name }}</option>
-            {% endfor %}
+    <form method="GET" action="/gl" class="row g-3 align-items-end">
+        <div class="col-md-8">
+            <label>เลือกบัญชีที่ต้องการเรียกดู</label>
+            <select name="account_code" class="form-select select2" required onchange="this.form.submit()">
+                <option value="" disabled {% if not selected_account %}selected{% endif %}>-- กรุณาเลือกบัญชี --</option>
+                <option value="ALL" {% if selected_account == 'ALL' %}selected{% endif %}>🌟 ดูรายงานรวมทั้งหมด (All Accounts)</option>
+                {% for acc in accounts %}
+                <option value="{{ acc.code }}" {% if selected_account == acc.code %}selected{% endif %}>
+                    {{ acc.code }} - {{ acc.name }}
+                </option>
+                {% endfor %}
             </select>
         </div>
-        <button type="submit" class="btn btn-primary">ดูรายงาน</button>
     </form>
 </div>
 
 {% if selected_account %}
 <div class="card p-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">บัญชี: 
-            {% for a in accounts %}
-                {% if a.code == selected_account %}{{ a.code }} {{ a.name }} (หมวด {{ a.category }}){% endif %}
-            {% endfor %}
-        </h4>
+        <h4 class="mb-0">สมุดบัญชีแยกประเภท {% if selected_account == 'ALL' %}(รวมทั้งหมด){% else %}{% for a in accounts %}{% if a.code == selected_account %}({{ a.code }} {{ a.name }}){% endif %}{% endfor %}{% endif %}</h4>
         <div class="no-print">
             <a href="/export/gl?account_code={{ selected_account }}" class="btn btn-success me-2">📥 ดาวน์โหลด Excel</a>
             <button onclick="window.print()" class="btn btn-secondary">🖨️ พิมพ์เอกสาร</button>
@@ -32,12 +31,15 @@
     <table class="table table-bordered mt-3">
         <thead class="table-light">
             <tr>
-                <th width="15%">วันที่</th>
-                <th width="15%">เลขที่เอกสาร</th>
-                <th width="30%">คำอธิบายรายการ</th>
+                <th width="12%">วันที่</th>
+                <th width="12%">เลขที่เอกสาร</th>
+                <th width="20%">คำอธิบายรายการ</th>
+                {% if selected_account == 'ALL' %}
+                <th width="15%">รหัส/ชื่อบัญชี</th>
+                {% endif %}
                 <th width="15%">หน่วยงาน</th>
-                <th width="12.5%" class="text-end">เดบิต</th>
-                <th width="12.5%" class="text-end">เครดิต</th>
+                <th width="12%" class="text-end">เดบิต</th>
+                <th width="12%" class="text-end">เครดิต</th>
             </tr>
         </thead>
         <tbody>
@@ -51,24 +53,27 @@
                 <td>{{ t.date }}</td>
                 <td>{{ t.doc_no }}</td>
                 <td>{{ t.description }}</td>
+                {% if selected_account == 'ALL' %}
+                <td>{{ t.account_code }} - {{ t.account_name }}</td>
+                {% endif %}
                 <td>{{ t.dept_name or '-' }}</td>
                 <td class="text-end">{{ "{:,.2f}".format(t.debit) if t.debit else '-' }}</td>
                 <td class="text-end">{{ "{:,.2f}".format(t.credit) if t.credit else '-' }}</td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="6" class="text-center text-muted">ไม่พบรายการเคลื่อนไหว</td>
+                <td colspan="{% if selected_account == 'ALL' %}7{% else %}6{% endif %}" class="text-center text-muted">ไม่พบรายการเคลื่อนไหว</td>
             </tr>
             {% endfor %}
         </tbody>
         <tfoot>
             <tr class="table-secondary fw-bold">
-                <td colspan="4" class="text-end">รวมยอดเคลื่อนไหว:</td>
+                <td colspan="{% if selected_account == 'ALL' %}5{% else %}4{% endif %}" class="text-end">รวมยอดเคลื่อนไหว:</td>
                 <td class="text-end text-success">{{ "{:,.2f}".format(total_dr.value) }}</td>
                 <td class="text-end text-success">{{ "{:,.2f}".format(total_cr.value) }}</td>
             </tr>
             <tr class="table-primary fw-bold">
-                <td colspan="4" class="text-end">ยอดยกไป (คงเหลือ):</td>
+                <td colspan="{% if selected_account == 'ALL' %}5{% else %}4{% endif %}" class="text-end">ยอดยกไป (คงเหลือ):</td>
                 <td colspan="2" class="text-center text-primary fs-5">
                     {% if total_dr.value > total_cr.value %}
                         Dr. {{ "{:,.2f}".format(total_dr.value - total_cr.value) }}
