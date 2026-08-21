@@ -240,24 +240,96 @@ def journal_entry():
 def journal_list():
     conn = get_db()
     query = request.args.get('q', '').strip()
+    month = request.args.get('month', '').strip()
     
     sql = '''
         SELECT d.*, SUM(t.debit) as total_debit, SUM(t.credit) as total_credit 
         FROM documents d 
         JOIN transactions t ON d.id = t.doc_id 
+        WHERE 1=1
     '''
     params = []
     
     if query:
-        sql += " WHERE d.doc_no LIKE ? OR d.date LIKE ? OR d.reference LIKE ? OR d.description LIKE ?"
+        sql += " AND (d.doc_no LIKE ? OR d.date LIKE ? OR d.reference LIKE ? OR d.description LIKE ?)"
         search_term = f"%{query}%"
-        params = [search_term, search_term, search_term, search_term]
+        params.extend([search_term, search_term, search_term, search_term])
+        
+    if month:
+        sql += " AND d.date LIKE ?"
+        params.append(f"{month}%")
         
     sql += " GROUP BY d.id ORDER BY d.date DESC, d.id DESC"
     
     docs = conn.execute(sql, params).fetchall()
     conn.close()
-    return render_template('journal_list.html', docs=docs, query=query)
+    return render_template('journal_list.html', docs=docs, query=query, month=month)
+
+# ===================== PRINT SPECIFIC JOURNAL =====================
+@app.route('/journal/print/<doc_no>')
+def print_journal(doc_no):
+    conn = get_db()
+    doc = conn.execute("SELECT * FROM documents WHERE doc_no = ?", (doc_no,)).fetchone()
+    if not doc:
+        flash('ไม่พบเอกสาร', 'danger')
+        conn.close()
+        return redirect(url_for('journal_list'))
+        
+    txs = conn.execute('''
+        SELECT t.*, a.name as account_name, d.name as dept_name 
+        FROM transactions t
+        LEFT JOIN accounts a ON t.account_code = a.code
+        LEFT JOIN departments d ON t.dept_code = d.code
+        WHERE t.doc_id = ?
+    ''', (doc['id'],)).fetchall()
+    
+    total_dr = sum(tx['debit'] for tx in txs)
+    total_cr = sum(tx['credit'] for tx in txs)
+    
+    conn.close()
+    return render_template('jv_print.html', doc=doc, txs=txs, total_dr=total_dr, total_cr=total_cr)
+
+# ===================== EXPORT JOURNAL LIST =====================
+@app.route('/export/journal')
+def export_journal_list():
+    conn = get_db()
+    query = request.args.get('q', '').strip()
+    month = request.args.get('month', '').strip()
+    
+    sql = '''
+        SELECT d.date as "วันที่", d.doc_no as "เลขที่เอกสาร", d.reference as "อ้างอิง", d.description as "คำอธิบายรายการ",
+               SUM(t.debit) as "รวมเดบิต", SUM(t.credit) as "รวมเครดิต"
+        FROM documents d 
+        JOIN transactions t ON d.id = t.doc_id 
+        WHERE 1=1
+    '''
+    params = []
+    
+    if query:
+        sql += " AND (d.doc_no LIKE ? OR d.date LIKE ? OR d.reference LIKE ? OR d.description LIKE ?)"
+        search_term = f"%{query}%"
+        params.extend([search_term, search_term, search_term, search_term])
+        
+    if month:
+        sql += " AND d.date LIKE ?"
+        params.append(f"{month}%")
+        
+    sql += " GROUP BY d.id ORDER BY d.date DESC, d.id DESC"
+    
+    docs = conn.execute(sql, params).fetchall()
+    conn.close()
+    
+    if not docs:
+        return "ไม่มีข้อมูลสำหรับดาวน์โหลด", 404
+        
+    df = pd.DataFrame([dict(row) for row in docs])
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name="Journal Register")
+    output.seek(0)
+    
+    filename = f"Journal_Register_{month or 'ALL'}.xlsx"
+    return send_file(output, download_name=filename, as_attachment=True)
 
 # ===================== EDIT JOURNAL ENTRY =====================
 @app.route('/journal/edit/<doc_no>', methods=['GET', 'POST'])

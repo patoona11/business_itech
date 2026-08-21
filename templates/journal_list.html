@@ -3,19 +3,26 @@
 <h2>📑 ประวัติเอกสาร (สมุดรายวันทั่วไป)</h2>
 <hr>
 <div class="card p-3">
-    <!-- Search Form -->
-    <form action="/journal/list" method="GET" class="mb-3">
-        <div class="input-group">
-            <input type="text" name="q" class="form-control" placeholder="ค้นหา เลขที่เอกสาร, วันที่, อ้างอิง หรือ คำอธิบาย..." value="{{ query or '' }}">
-            <button type="submit" class="btn btn-primary">🔍 ค้นหา</button>
-            {% if query %}
-            <a href="/journal/list" class="btn btn-outline-secondary">ล้างการค้นหา</a>
-            {% endif %}
+    <!-- Search Form & Actions -->
+    <div class="d-flex justify-content-between align-items-end mb-3 no-print">
+        <form action="/journal/list" method="GET" class="d-flex w-75">
+            <div class="input-group">
+                <input type="text" name="q" class="form-control" placeholder="ค้นหา เลขที่เอกสาร, วันที่, อ้างอิง หรือ คำอธิบาย..." value="{{ query or '' }}">
+                <input type="month" name="month" class="form-control" style="max-width: 200px;" value="{{ month or '' }}">
+                <button type="submit" class="btn btn-primary">🔍 ค้นหา</button>
+                {% if query or month %}
+                <a href="/journal/list" class="btn btn-outline-secondary">ล้างค่า</a>
+                {% endif %}
+            </div>
+        </form>
+        <div>
+            <a href="/export/journal?q={{ query or '' }}&month={{ month or '' }}" class="btn btn-success me-2">📥 โหลด Excel</a>
+            <button onclick="window.print()" class="btn btn-secondary">🖨️ พิมพ์หน้านี้</button>
         </div>
-    </form>
+    </div>
 
     <table class="table table-striped mt-3 align-middle">
-        <thead class="table-dark">
+        <thead class="table-dark text-center">
             <tr>
                 <th>เลขที่เอกสาร</th>
                 <th>วันที่</th>
@@ -23,7 +30,7 @@
                 <th>คำอธิบายรายการ</th>
                 <th class="text-end">ยอดรวมเดบิต</th>
                 <th class="text-end">ยอดรวมเครดิต</th>
-                <th class="text-center">จัดการ</th>
+                <th class="text-center" width="180">จัดการ</th>
             </tr>
         </thead>
         <tbody>
@@ -33,13 +40,14 @@
                     {{ doc.doc_no }}
                     {% if doc.status == 2 %}<span class="badge bg-danger ms-1">ปิดบัญชี</span>{% endif %}
                 </td>
-                <td>{{ doc.date }}</td>
-                <td>{{ doc.reference or '-' }}</td>
+                <td class="text-center">{{ doc.date }}</td>
+                <td class="text-center">{{ doc.reference or '-' }}</td>
                 <td>{{ doc.description }}</td>
                 <td class="text-end text-success">{{ "{:,.2f}".format(doc.total_debit or 0) }}</td>
                 <td class="text-end text-success">{{ "{:,.2f}".format(doc.total_credit or 0) }}</td>
-                <td class="text-center">
-                    <a href="/journal/edit/{{ doc.doc_no }}" class="btn btn-sm btn-warning">✏️ แก้ไข</a>
+                <td class="text-center no-print">
+                    <a href="/journal/edit/{{ doc.doc_no }}" class="btn btn-sm btn-warning">✏️</a>
+                    <a href="/journal/print/{{ doc.doc_no }}" target="_blank" class="btn btn-sm btn-info text-white">🖨️ พิมพ์</a>
                 </td>
             </tr>
             {% else %}
