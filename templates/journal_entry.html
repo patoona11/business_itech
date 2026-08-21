@@ -104,9 +104,15 @@
         
         <div class="d-flex justify-content-between align-items-center mt-3">
             <button type="button" class="btn btn-secondary" onclick="addRow()">+ เพิ่มบรรทัด</button>
+            {% if edit_doc %}
+            <a href="javascript:void(0);" onclick="if(confirm('ยืนยันการลบเอกสาร {{ edit_doc.doc_no }} (ลบถาวร)?')) { document.getElementById('deleteForm').submit(); }" class="btn btn-outline-danger">🗑️ ยกเลิกเอกสารนี้ (ลบ)</a>
+            {% endif %}
             <button type="submit" class="btn btn-success btn-lg px-5 shadow-sm" onclick="return validateJV()">💾 บันทึกรายการ</button>
         </div>
     </form>
+    {% if edit_doc %}
+    <form action="/journal/delete/{{ edit_doc.doc_no }}" method="POST" id="deleteForm" style="display:none;"></form>
+    {% endif %}
 </div>
 
 <!-- Template for new row -->

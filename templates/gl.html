@@ -4,7 +4,7 @@
 <hr class="no-print">
 <div class="card p-4 mb-4 no-print">
     <form method="GET" action="/gl" class="row g-3 align-items-end">
-        <div class="col-md-8">
+        <div class="col-md-4">
             <label>เลือกบัญชีที่ต้องการเรียกดู</label>
             <select name="account_code" class="form-select select2" required onchange="this.form.submit()">
                 <option value="" disabled {% if not selected_account %}selected{% endif %}>-- กรุณาเลือกบัญชี --</option>
@@ -16,6 +16,19 @@
                 {% endfor %}
             </select>
         </div>
+        <div class="col-md-3">
+            <label>ตั้งแต่วันที่</label>
+            <input type="date" name="start_date" class="form-control" value="{{ start_date or '' }}" onchange="this.form.submit()">
+        </div>
+        <div class="col-md-3">
+            <label>ถึงวันที่</label>
+            <input type="date" name="end_date" class="form-control" value="{{ end_date or '' }}" onchange="this.form.submit()">
+        </div>
+        <div class="col-md-2">
+            {% if start_date or end_date %}
+            <a href="/gl?account_code={{ selected_account }}" class="btn btn-outline-secondary w-100">ล้างวันที่</a>
+            {% endif %}
+        </div>
     </form>
 </div>
 
@@ -24,7 +37,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">สมุดบัญชีแยกประเภท {% if selected_account == 'ALL' %}(รวมทั้งหมด){% else %}{% for a in accounts %}{% if a.code == selected_account %}({{ a.code }} {{ a.name }}){% endif %}{% endfor %}{% endif %}</h4>
         <div class="no-print">
-            <a href="/export/gl?account_code={{ selected_account }}" class="btn btn-success me-2">📥 ดาวน์โหลด Excel</a>
+            <a href="/export/gl?account_code={{ selected_account }}&start_date={{ start_date or '' }}&end_date={{ end_date or '' }}" class="btn btn-success me-2">📥 ดาวน์โหลด Excel</a>
             <button onclick="window.print()" class="btn btn-secondary">🖨️ พิมพ์เอกสาร</button>
         </div>
     </div>

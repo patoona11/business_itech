@@ -240,7 +240,8 @@ def journal_entry():
 def journal_list():
     conn = get_db()
     query = request.args.get('q', '').strip()
-    month = request.args.get('month', '').strip()
+    start_date = request.args.get('start_date', '').strip()
+    end_date = request.args.get('end_date', '').strip()
     
     sql = '''
         SELECT d.*, SUM(t.debit) as total_debit, SUM(t.credit) as total_credit 
@@ -255,15 +256,19 @@ def journal_list():
         search_term = f"%{query}%"
         params.extend([search_term, search_term, search_term, search_term])
         
-    if month:
-        sql += " AND d.date LIKE ?"
-        params.append(f"{month}%")
+    if start_date:
+        sql += " AND d.date >= ?"
+        params.append(start_date)
+    
+    if end_date:
+        sql += " AND d.date <= ?"
+        params.append(end_date)
         
     sql += " GROUP BY d.id ORDER BY d.date DESC, d.id DESC"
     
     docs = conn.execute(sql, params).fetchall()
     conn.close()
-    return render_template('journal_list.html', docs=docs, query=query, month=month)
+    return render_template('journal_list.html', docs=docs, query=query, start_date=start_date, end_date=end_date)
 
 # ===================== PRINT SPECIFIC JOURNAL =====================
 @app.route('/journal/print/<doc_no>')
@@ -294,7 +299,8 @@ def print_journal(doc_no):
 def export_journal_list():
     conn = get_db()
     query = request.args.get('q', '').strip()
-    month = request.args.get('month', '').strip()
+    start_date = request.args.get('start_date', '').strip()
+    end_date = request.args.get('end_date', '').strip()
     
     sql = '''
         SELECT d.date as "วันที่", d.doc_no as "เลขที่เอกสาร", d.reference as "อ้างอิง", d.description as "คำอธิบายรายการ",
@@ -310,9 +316,13 @@ def export_journal_list():
         search_term = f"%{query}%"
         params.extend([search_term, search_term, search_term, search_term])
         
-    if month:
-        sql += " AND d.date LIKE ?"
-        params.append(f"{month}%")
+    if start_date:
+        sql += " AND d.date >= ?"
+        params.append(start_date)
+        
+    if end_date:
+        sql += " AND d.date <= ?"
+        params.append(end_date)
         
     sql += " GROUP BY d.id ORDER BY d.date DESC, d.id DESC"
     
@@ -328,8 +338,23 @@ def export_journal_list():
         df.to_excel(writer, index=False, sheet_name="Journal Register")
     output.seek(0)
     
-    filename = f"Journal_Register_{month or 'ALL'}.xlsx"
+    filename = f"Journal_Register_{start_date}_to_{end_date}.xlsx"
     return send_file(output, download_name=filename, as_attachment=True)
+
+# ===================== DELETE JOURNAL ENTRY =====================
+@app.route('/journal/delete/<doc_no>', methods=['POST', 'GET'])
+def delete_journal(doc_no):
+    conn = get_db()
+    doc = conn.execute("SELECT id FROM documents WHERE doc_no = ?", (doc_no,)).fetchone()
+    if doc:
+        conn.execute("DELETE FROM transactions WHERE doc_id = ?", (doc['id'],))
+        conn.execute("DELETE FROM documents WHERE id = ?", (doc['id'],))
+        conn.commit()
+        flash(f'ลบเอกสาร {doc_no} เรียบร้อยแล้ว', 'success')
+    else:
+        flash('ไม่พบเอกสารที่ต้องการลบ', 'danger')
+    conn.close()
+    return redirect(url_for('journal_list'))
 
 # ===================== EDIT JOURNAL ENTRY =====================
 @app.route('/journal/edit/<doc_no>', methods=['GET', 'POST'])
@@ -399,47 +424,68 @@ def edit_journal(doc_no):
 def general_ledger():
     conn = get_db()
     account_code = request.args.get('account_code', '')
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
     
     transactions = []
     if account_code:
-        if account_code == 'ALL':
-            transactions = conn.execute('''
-                SELECT d.date, d.doc_no, d.description, t.account_code, a.name as account_name, t.debit, t.credit, dept.name as dept_name
-                FROM transactions t
-                JOIN documents d ON t.doc_id = d.id
-                LEFT JOIN departments dept ON t.dept_code = dept.code
-                LEFT JOIN accounts a ON t.account_code = a.code
-                ORDER BY t.account_code, d.date, d.id
-            ''').fetchall()
-        else:
-            transactions = conn.execute('''
-                SELECT d.date, d.doc_no, d.description, t.account_code, a.name as account_name, t.debit, t.credit, dept.name as dept_name
-                FROM transactions t
-                JOIN documents d ON t.doc_id = d.id
-                LEFT JOIN departments dept ON t.dept_code = dept.code
-                LEFT JOIN accounts a ON t.account_code = a.code
-                WHERE t.account_code = ?
-                ORDER BY d.date, d.id
-            ''', (account_code,)).fetchall()
+        sql = '''
+            SELECT d.date, d.doc_no, d.description, t.account_code, a.name as account_name, t.debit, t.credit, dept.name as dept_name
+            FROM transactions t
+            JOIN documents d ON t.doc_id = d.id
+            LEFT JOIN departments dept ON t.dept_code = dept.code
+            LEFT JOIN accounts a ON t.account_code = a.code
+            WHERE 1=1
+        '''
+        params = []
+        
+        if account_code != 'ALL':
+            sql += " AND t.account_code = ?"
+            params.append(account_code)
+            
+        if start_date:
+            sql += " AND d.date >= ?"
+            params.append(start_date)
+            
+        if end_date:
+            sql += " AND d.date <= ?"
+            params.append(end_date)
+            
+        sql += " ORDER BY t.account_code, d.date, d.id"
+        transactions = conn.execute(sql, params).fetchall()
         
     accounts = conn.execute("SELECT * FROM accounts ORDER BY code").fetchall()
     conn.close()
-    return render_template('gl.html', accounts=accounts, transactions=transactions, selected_account=account_code)
+    return render_template('gl.html', accounts=accounts, transactions=transactions, selected_account=account_code, start_date=start_date, end_date=end_date)
 
 # ===================== TRIAL BALANCE (TB) =====================
 @app.route('/tb')
 def trial_balance():
     conn = get_db()
-    tb_data = conn.execute('''
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+    
+    date_filter = ""
+    params = []
+    if start_date:
+        date_filter += " AND d.date >= ?"
+        params.append(start_date)
+    if end_date:
+        date_filter += " AND d.date <= ?"
+        params.append(end_date)
+        
+    tb_data = conn.execute(f'''
         SELECT a.code, a.name, a.category, a.status,
                SUM(t.debit) as sum_dr, SUM(t.credit) as sum_cr
         FROM accounts a
         LEFT JOIN transactions t ON a.code = t.account_code
+        LEFT JOIN documents d ON t.doc_id = d.id
+        WHERE 1=1 {date_filter}
         GROUP BY a.code
         ORDER BY a.code
-    ''').fetchall()
+    ''', params).fetchall()
     conn.close()
-    return render_template('reports.html', tb_data=tb_data)
+    return render_template('reports.html', tb_data=tb_data, start_date=start_date, end_date=end_date)
 
 @app.route('/accounts/toggle_status/<code>', methods=['POST'])
 def toggle_account_status(code):
@@ -462,18 +508,36 @@ from flask import send_file
 def export_gl():
     conn = get_db()
     account_code = request.args.get('account_code', '')
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+    
     if not account_code:
         return "Please select an account first.", 400
         
-    transactions = conn.execute('''
+    sql = '''
         SELECT d.date as "วันที่", d.doc_no as "เลขที่เอกสาร", d.description as "คำอธิบายรายการ", 
                dept.name as "หน่วยงาน", t.debit as "เดบิต", t.credit as "เครดิต"
         FROM transactions t
         JOIN documents d ON t.doc_id = d.id
         LEFT JOIN departments dept ON t.dept_code = dept.code
-        WHERE t.account_code = ?
-        ORDER BY d.date, d.id
-    ''', (account_code,)).fetchall()
+        WHERE 1=1
+    '''
+    params = []
+    
+    if account_code != 'ALL':
+        sql += " AND t.account_code = ?"
+        params.append(account_code)
+        
+    if start_date:
+        sql += " AND d.date >= ?"
+        params.append(start_date)
+        
+    if end_date:
+        sql += " AND d.date <= ?"
+        params.append(end_date)
+        
+    sql += " ORDER BY t.account_code, d.date, d.id"
+    transactions = conn.execute(sql, params).fetchall()
     
     account_info = conn.execute("SELECT name FROM accounts WHERE code = ?", (account_code,)).fetchone()
     conn.close()
