@@ -2,18 +2,37 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center no-print">
     <h2>📊 งบทดลอง (Trial Balance)</h2>
+    <div>
+        <a href="/export/tb?start_date={{ start_date or '' }}&end_date={{ end_date or '' }}" class="btn btn-success me-2">📥 โหลด Excel</a>
+        <button onclick="window.print()" class="btn btn-secondary">🖨️ พิมพ์หน้านี้</button>
+    </div>
+</div>
+
+<div class="no-print mt-2 mb-3">
     <form method="GET" action="/tb" class="d-flex align-items-center">
-        <span class="me-2">ตั้งแต่วันที่:</span>
+        <span class="me-2 fw-bold">กรองตามวันที่:</span>
         <input type="date" name="start_date" class="form-control me-2" value="{{ start_date or '' }}" style="width: 150px;">
-        <span class="me-2">ถึง:</span>
+        <span class="me-2">ถึง</span>
         <input type="date" name="end_date" class="form-control me-2" value="{{ end_date or '' }}" style="width: 150px;">
-        <button type="submit" class="btn btn-primary me-2">ค้นหา</button>
+        <button type="submit" class="btn btn-primary me-2">🔍 ค้นหา</button>
         {% if start_date or end_date %}
         <a href="/tb" class="btn btn-outline-secondary">ล้างค่า</a>
         {% endif %}
     </form>
 </div>
-<hr>
+
+<!-- For Print Header -->
+<div class="d-none d-print-block text-center mb-4">
+    <h3 class="fw-bold">งบทดลอง (Trial Balance)</h3>
+    {% if start_date and end_date %}
+    <h5>วันที่ {{ start_date }} ถึง {{ end_date }}</h5>
+    {% elif start_date %}
+    <h5>ตั้งแต่วันที่ {{ start_date }}</h5>
+    {% elif end_date %}
+    <h5>ถึงวันที่ {{ end_date }}</h5>
+    {% endif %}
+</div>
+<hr class="no-print">
 <div class="card p-3">
     <table class="table table-hover mt-3 align-middle">
         <thead class="table-dark">

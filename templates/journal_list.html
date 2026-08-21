@@ -1,6 +1,14 @@
 {% extends 'layout.html' %}
 {% block content %}
-<h2>📑 ประวัติเอกสาร (สมุดรายวันทั่วไป)</h2>
+<h2>📑 ประวัติเอกสาร (สมุดรายวันทั่วไป)
+    {% if start_date and end_date %}
+    <small class="text-muted fs-5 ms-2">(วันที่ {{ start_date }} ถึง {{ end_date }})</small>
+    {% elif start_date %}
+    <small class="text-muted fs-5 ms-2">(ตั้งแต่วันที่ {{ start_date }})</small>
+    {% elif end_date %}
+    <small class="text-muted fs-5 ms-2">(ถึงวันที่ {{ end_date }})</small>
+    {% endif %}
+</h2>
 <hr>
 <div class="card p-3">
     <!-- Search Form & Actions -->

@@ -556,6 +556,45 @@ def export_gl():
     filename = f"GL_{account_code}_{acc_name}.xlsx"
     return send_file(output, download_name=filename, as_attachment=True)
 
+@app.route('/export/tb')
+def export_tb():
+    conn = get_db()
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+    
+    date_filter = ""
+    params = []
+    if start_date:
+        date_filter += " AND d.date >= ?"
+        params.append(start_date)
+    if end_date:
+        date_filter += " AND d.date <= ?"
+        params.append(end_date)
+        
+    tb_data = conn.execute(f'''
+        SELECT a.code as "รหัสบัญชี", a.name as "ชื่อบัญชี", a.category as "หมวด", 
+               SUM(t.debit) as "เดบิต", SUM(t.credit) as "เครดิต"
+        FROM accounts a
+        LEFT JOIN transactions t ON a.code = t.account_code
+        LEFT JOIN documents d ON t.doc_id = d.id
+        WHERE 1=1 {date_filter}
+        GROUP BY a.code
+        ORDER BY a.code
+    ''', params).fetchall()
+    conn.close()
+    
+    if not tb_data:
+        return "ไม่มีข้อมูล", 404
+        
+    df = pd.DataFrame([dict(row) for row in tb_data])
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name="Trial Balance")
+    output.seek(0)
+    
+    filename = f"Trial_Balance_{start_date}_to_{end_date}.xlsx"
+    return send_file(output, download_name=filename, as_attachment=True)
+
 if __name__ == '__main__':
     init_db()
     if not os.path.exists('templates'):
