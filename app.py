@@ -239,16 +239,88 @@ def journal_entry():
 @app.route('/journal/list')
 def journal_list():
     conn = get_db()
-    # Fetch all docs with total dr/cr
-    docs = conn.execute('''
+    query = request.args.get('q', '').strip()
+    
+    sql = '''
         SELECT d.*, SUM(t.debit) as total_debit, SUM(t.credit) as total_credit 
         FROM documents d 
         JOIN transactions t ON d.id = t.doc_id 
-        GROUP BY d.id 
-        ORDER BY d.date DESC, d.id DESC
-    ''').fetchall()
+    '''
+    params = []
+    
+    if query:
+        sql += " WHERE d.doc_no LIKE ? OR d.date LIKE ? OR d.reference LIKE ? OR d.description LIKE ?"
+        search_term = f"%{query}%"
+        params = [search_term, search_term, search_term, search_term]
+        
+    sql += " GROUP BY d.id ORDER BY d.date DESC, d.id DESC"
+    
+    docs = conn.execute(sql, params).fetchall()
     conn.close()
-    return render_template('journal_list.html', docs=docs)
+    return render_template('journal_list.html', docs=docs, query=query)
+
+# ===================== EDIT JOURNAL ENTRY =====================
+@app.route('/journal/edit/<doc_no>', methods=['GET', 'POST'])
+def edit_journal(doc_no):
+    conn = get_db()
+    
+    # ดึงเอกสารเดิม
+    doc = conn.execute("SELECT * FROM documents WHERE doc_no = ?", (doc_no,)).fetchone()
+    if not doc:
+        flash('ไม่พบเอกสารที่ต้องการแก้ไข', 'danger')
+        conn.close()
+        return redirect(url_for('journal_list'))
+        
+    if request.method == 'POST':
+        date = request.form['date']
+        description = request.form['description']
+        reference = request.form.get('reference', '')
+        status = request.form.get('status', '1')
+        
+        account_codes = request.form.getlist('account_code[]')
+        dept_codes = request.form.getlist('dept_code[]')
+        debits = request.form.getlist('debit[]')
+        credits = request.form.getlist('credit[]')
+        
+        try:
+            cur = conn.cursor()
+            # อัปเดตข้อมูลเอกสาร
+            cur.execute("UPDATE documents SET date=?, description=?, reference=?, status=? WHERE id=?", 
+                        (date, description, reference, status, doc['id']))
+            
+            # ลบรายการเดิมทั้งหมด
+            cur.execute("DELETE FROM transactions WHERE doc_id=?", (doc['id'],))
+            
+            # บันทึกรายการใหม่
+            for i in range(len(account_codes)):
+                ac = account_codes[i]
+                dc = dept_codes[i] if dept_codes[i] else None
+                dr = float(debits[i]) if debits[i] else 0.0
+                cr = float(credits[i]) if credits[i] else 0.0
+                
+                if ac and (dr > 0 or cr > 0):
+                    cur.execute("INSERT INTO transactions (doc_id, account_code, dept_code, debit, credit) VALUES (?, ?, ?, ?, ?)",
+                                (doc['id'], ac, dc, dr, cr))
+            
+            conn.commit()
+            flash(f'บันทึกการแก้ไขเอกสาร {doc_no} สำเร็จ', 'success')
+            return redirect(url_for('journal_list'))
+        except Exception as e:
+            conn.rollback()
+            flash(f'Error: {str(e)}', 'danger')
+            
+    # GET Method: ดึงรายการ Transaction เดิมมาแสดง
+    txs = conn.execute("SELECT * FROM transactions WHERE doc_id = ?", (doc['id'],)).fetchall()
+    
+    accounts = conn.execute("SELECT * FROM accounts WHERE status = 1 ORDER BY code").fetchall()
+    departments = conn.execute("SELECT * FROM departments ORDER BY code").fetchall()
+    conn.close()
+    
+    return render_template('journal_entry.html', 
+                           accounts=accounts, 
+                           departments=departments, 
+                           edit_doc=doc, 
+                           edit_txs=txs)
 
 # ===================== GENERAL LEDGER (GL) =====================
 @app.route('/gl')

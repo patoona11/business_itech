@@ -3,29 +3,29 @@
 <h2>✍️ ใบสำคัญบันทึกบัญชี (Journal Voucher)</h2>
 <hr>
 <div class="card p-4">
-    <form action="/journal" method="POST" id="jvForm">
+    <form action="{% if edit_doc %}/journal/edit/{{ edit_doc.doc_no }}{% else %}/journal{% endif %}" method="POST" id="jvForm">
         <div class="row mb-3">
             <div class="col-md-2">
                 <label>เลขที่เอกสาร</label>
-                <input type="text" name="doc_no" class="form-control" value="{{ next_doc_no }}" required>
+                <input type="text" name="doc_no" class="form-control" value="{{ edit_doc.doc_no if edit_doc else next_doc_no }}" {% if edit_doc %}readonly{% else %}required{% endif %}>
             </div>
             <div class="col-md-2">
                 <label>วันที่</label>
-                <input type="date" name="date" class="form-control" required>
+                <input type="date" name="date" class="form-control" value="{{ edit_doc.date if edit_doc else '' }}" required id="jvDate">
             </div>
             <div class="col-md-3">
                 <label>อ้างอิงเอกสาร (Ref.)</label>
-                <input type="text" name="reference" class="form-control" placeholder="เช่น INV-001">
+                <input type="text" name="reference" class="form-control" value="{{ edit_doc.reference if edit_doc else '' }}" placeholder="เช่น INV-001">
             </div>
             <div class="col-md-3">
                 <label>คำอธิบายรายการ</label>
-                <input type="text" name="description" class="form-control" required>
+                <input type="text" name="description" class="form-control" value="{{ edit_doc.description if edit_doc else '' }}" required>
             </div>
             <div class="col-md-2">
                 <label>สถานะ</label>
                 <select name="status" class="form-select">
-                    <option value="1">ปกติ (Open)</option>
-                    <option value="2">ปิดบัญชี (Closed)</option>
+                    <option value="1" {% if edit_doc and edit_doc.status == 1 %}selected{% endif %}>ปกติ (Open)</option>
+                    <option value="2" {% if edit_doc and edit_doc.status == 2 %}selected{% endif %}>ปิดบัญชี (Closed)</option>
                 </select>
             </div>
         </div>
@@ -41,30 +41,56 @@
                 </tr>
             </thead>
             <tbody>
-                <!-- default 2 rows -->
-                {% for i in range(2) %}
-                <tr>
-                    <td>
-                        <select name="account_code[]" class="form-select select2">
-                            <option value=""></option>
-                            {% for a in accounts %}
-                            <option value="{{ a.code }}">{{ a.code }} - {{ a.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </td>
-                    <td>
-                        <select name="dept_code[]" class="form-select">
-                            <option value="">- เลือกหน่วยงาน -</option>
-                            {% for d in departments %}
-                            <option value="{{ d.code }}">{{ d.code }} - {{ d.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </td>
-                    <td><input type="number" step="0.01" name="debit[]" class="form-control dr-input" onkeyup="calcTotals()"></td>
-                    <td><input type="number" step="0.01" name="credit[]" class="form-control cr-input" onkeyup="calcTotals()"></td>
-                    <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">ลบ</button></td>
-                </tr>
-                {% endfor %}
+                {% if edit_txs %}
+                    {% for tx in edit_txs %}
+                    <tr>
+                        <td>
+                            <select name="account_code[]" class="form-select select2">
+                                <option value=""></option>
+                                {% for a in accounts %}
+                                <option value="{{ a.code }}" {% if a.code == tx.account_code %}selected{% endif %}>{{ a.code }} - {{ a.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <select name="dept_code[]" class="form-select">
+                                <option value="">- เลือกหน่วยงาน -</option>
+                                {% for d in departments %}
+                                <option value="{{ d.code }}" {% if d.code == tx.dept_code %}selected{% endif %}>{{ d.code }} - {{ d.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="number" step="0.01" name="debit[]" class="form-control dr-input" value="{{ tx.debit if tx.debit > 0 else '' }}" onkeyup="calcTotals()"></td>
+                        <td><input type="number" step="0.01" name="credit[]" class="form-control cr-input" value="{{ tx.credit if tx.credit > 0 else '' }}" onkeyup="calcTotals()"></td>
+                        <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">ลบ</button></td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <!-- default 2 rows -->
+                    {% for i in range(2) %}
+                    <tr>
+                        <td>
+                            <select name="account_code[]" class="form-select select2">
+                                <option value=""></option>
+                                {% for a in accounts %}
+                                <option value="{{ a.code }}">{{ a.code }} - {{ a.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <select name="dept_code[]" class="form-select">
+                                <option value="">- เลือกหน่วยงาน -</option>
+                                {% for d in departments %}
+                                <option value="{{ d.code }}">{{ d.code }} - {{ d.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="number" step="0.01" name="debit[]" class="form-control dr-input" onkeyup="calcTotals()"></td>
+                        <td><input type="number" step="0.01" name="credit[]" class="form-control cr-input" onkeyup="calcTotals()"></td>
+                        <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">ลบ</button></td>
+                    </tr>
+                    {% endfor %}
+                {% endif %}
             </tbody>
             <tfoot>
                 <tr>
@@ -117,9 +143,15 @@
             allowClear: true,
             width: '100%'
         });
+        
+        {% if edit_txs %}
+        // คำนวณยอดรวมทันทีเมื่อโหลดหน้าแก้ไข
+        calcTotals();
+        {% else %}
+        // ใส่วันที่ปัจจุบันเฉพาะกรณีสร้างใหม่
+        document.querySelector('#jvDate').valueAsDate = new Date();
+        {% endif %}
     });
-
-    document.querySelector('input[name="date"]').valueAsDate = new Date();
 
     function addRow() {
         var tbody = document.querySelector('#txTable tbody');

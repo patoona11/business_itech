@@ -3,24 +3,48 @@
 <h2>📑 ประวัติเอกสาร (สมุดรายวันทั่วไป)</h2>
 <hr>
 <div class="card p-3">
-    <table class="table table-striped mt-3">
+    <!-- Search Form -->
+    <form action="/journal/list" method="GET" class="mb-3">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control" placeholder="ค้นหา เลขที่เอกสาร, วันที่, อ้างอิง หรือ คำอธิบาย..." value="{{ query or '' }}">
+            <button type="submit" class="btn btn-primary">🔍 ค้นหา</button>
+            {% if query %}
+            <a href="/journal/list" class="btn btn-outline-secondary">ล้างการค้นหา</a>
+            {% endif %}
+        </div>
+    </form>
+
+    <table class="table table-striped mt-3 align-middle">
         <thead class="table-dark">
             <tr>
                 <th>เลขที่เอกสาร</th>
                 <th>วันที่</th>
+                <th>อ้างอิง (Ref.)</th>
                 <th>คำอธิบายรายการ</th>
                 <th class="text-end">ยอดรวมเดบิต</th>
                 <th class="text-end">ยอดรวมเครดิต</th>
+                <th class="text-center">จัดการ</th>
             </tr>
         </thead>
         <tbody>
             {% for doc in docs %}
             <tr>
-                <td>{{ doc.doc_no }}</td>
+                <td>
+                    {{ doc.doc_no }}
+                    {% if doc.status == 2 %}<span class="badge bg-danger ms-1">ปิดบัญชี</span>{% endif %}
+                </td>
                 <td>{{ doc.date }}</td>
+                <td>{{ doc.reference or '-' }}</td>
                 <td>{{ doc.description }}</td>
                 <td class="text-end text-success">{{ "{:,.2f}".format(doc.total_debit or 0) }}</td>
                 <td class="text-end text-success">{{ "{:,.2f}".format(doc.total_credit or 0) }}</td>
+                <td class="text-center">
+                    <a href="/journal/edit/{{ doc.doc_no }}" class="btn btn-sm btn-warning">✏️ แก้ไข</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="text-center text-muted">ไม่พบข้อมูลเอกสาร</td>
             </tr>
             {% endfor %}
         </tbody>
