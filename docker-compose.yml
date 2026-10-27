@@ -1,0 +1,10 @@
+services:
+  accounting:
+    build: .
+    container_name: accounting_app
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount database file to keep data safe on the host machine
+      - ./double_entry.db:/app/double_entry.db
